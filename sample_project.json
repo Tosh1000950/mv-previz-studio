@@ -1,0 +1,317 @@
+{
+  "version": "2.5D-MV-Previz-1.0",
+  "duration": 12,
+  "layers": [
+    {
+      "id": "bg",
+      "name": "背景 (Background)",
+      "visible": true,
+      "imageUrl": "",
+      "baseW": 24,
+      "baseH": 13.5,
+      "defaultZ": -10
+    },
+    {
+      "id": "mid",
+      "name": "中景・街並み (Midground)",
+      "visible": true,
+      "imageUrl": "",
+      "baseW": 18,
+      "baseH": 10.125,
+      "defaultZ": -4.5
+    },
+    {
+      "id": "char",
+      "name": "キャラクター (Character)",
+      "visible": true,
+      "imageUrl": "",
+      "baseW": 3.4,
+      "baseH": 4.8,
+      "defaultZ": 0
+    },
+    {
+      "id": "fg",
+      "name": "前景エフェクト (Foreground)",
+      "visible": true,
+      "imageUrl": "",
+      "baseW": 13,
+      "baseH": 7.3,
+      "defaultZ": 3.2
+    }
+  ],
+  "cuts": [
+    {
+      "id": "cut-1",
+      "name": "CUT 01: ゆっくり寄る",
+      "startTime": 0,
+      "endTime": 4,
+      "easing": "easeInOut",
+      "camera": {
+        "start": {
+          "x": 0,
+          "y": 2.3,
+          "z": 8.5,
+          "fov": 45,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        },
+        "end": {
+          "x": 0,
+          "y": 2.4,
+          "z": 5.6,
+          "fov": 42,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        }
+      },
+      "layers": {
+        "bg": {
+          "sx": 0,
+          "sy": 3.5,
+          "sz": -10,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 3.5,
+          "ez": -10,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "mid": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": -4.5,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": -4.5,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "char": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": 0,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": 0,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "fg": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": 3.2,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": 3.2,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        }
+      }
+    },
+    {
+      "id": "cut-2",
+      "name": "CUT 02: 横移動＋キャラ前進",
+      "startTime": 4,
+      "endTime": 8,
+      "easing": "linear",
+      "camera": {
+        "start": {
+          "x": -1.8,
+          "y": 1.8,
+          "z": 6.4,
+          "fov": 44,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        },
+        "end": {
+          "x": 1.4,
+          "y": 2.2,
+          "z": 5.4,
+          "fov": 44,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        }
+      },
+      "layers": {
+        "bg": {
+          "sx": 0,
+          "sy": 3.5,
+          "sz": -10,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 3.5,
+          "ez": -10,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "mid": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": -4.5,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": -4.5,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "char": {
+          "sx": -0.9,
+          "sy": 2.5,
+          "sz": -1.2,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0.2,
+          "ey": 2.5,
+          "ez": 1.6,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": true,
+          "bobFreq": 2.0,
+          "bobAmp": 0.14
+        },
+        "fg": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": 3.2,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": 3.2,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        }
+      }
+    },
+    {
+      "id": "cut-3",
+      "name": "CUT 03: 回り込み気味に引く",
+      "startTime": 8,
+      "endTime": 12,
+      "easing": "easeInOut",
+      "camera": {
+        "start": {
+          "x": 1.2,
+          "y": 2.4,
+          "z": 5.2,
+          "fov": 43,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        },
+        "end": {
+          "x": -2.4,
+          "y": 3.0,
+          "z": 8.8,
+          "fov": 46,
+          "tx": 0,
+          "ty": 2.2,
+          "tz": 0,
+          "roll": 0
+        }
+      },
+      "layers": {
+        "bg": {
+          "sx": 0,
+          "sy": 3.5,
+          "sz": -10,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 3.5,
+          "ez": -10,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "mid": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": -4.5,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": -4.5,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "char": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": 0,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": 0,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        },
+        "fg": {
+          "sx": 0,
+          "sy": 2.5,
+          "sz": 3.2,
+          "sScale": 1,
+          "sRot": 0,
+          "ex": 0,
+          "ey": 2.5,
+          "ez": 3.2,
+          "eScale": 1,
+          "eRot": 0,
+          "bobbing": false,
+          "bobFreq": 2.0,
+          "bobAmp": 0.12
+        }
+      }
+    }
+  ]
+}
