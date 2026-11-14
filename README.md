@@ -1,5 +1,7 @@
 # 2.5D MV Previz Studio
 
+**▶ Live Demo: https://tosh1000950.github.io/mv-previz-studio/** （ブラウザでそのまま触れます）
+
 **動画生成AIに「カメラワーク」を伝えるための、下書き（プリビズ／アニメティクス）作成ツール。**
 
 AI video generators are bad at following camera directions written in text.
