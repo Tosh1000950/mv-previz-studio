@@ -16,6 +16,8 @@ first/last-frame PNGs and a guide video to feed into the generator.
 > 個人制作のための簡易ツールです。プロ向けプリビズソフトの代替ではなく、
 > 「生成前に、カメラとタイミングを目で確認する」ための最小構成になっています。
 
+📖 **詳しい取扱説明書はこちら → [MANUAL.md](MANUAL.md)**
+
 ## 使い方 / How to use
 
 1. `index.html` をブラウザで開く（ネット接続が必要：Three.js等をCDNから読みます）
