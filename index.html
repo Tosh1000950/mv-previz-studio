@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2.5D MV プリビズ＆アニマティクス・スタジオ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background-color: #0b0d11;
+      color: #e2e8f0;
+      user-select: none;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Custom Workstation Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #11141b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #282e3b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b4457;
+    }
+    /* Custom Number Inputs */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 0.6;
+    }
+    input[type="text"], input[type="number"], select {
+      user-select: text;
+    }
+    @keyframes recPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+    .rec-dot {
+      animation: recPulse 1s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen lg:h-screen flex flex-col overflow-x-hidden lg:overflow-hidden bg-[#0b0d11] text-slate-200">
+
+  <!-- =====================================================================
+       TOP HEADER BAR: Global Media, Project JSON & AI Export Actions
+       ===================================================================== -->
+  <header class="min-h-12 py-1.5 px-3 border-b border-[#222733] bg-[#12151d] flex flex-wrap items-center justify-between gap-2 shrink-0 z-30">
+    <!-- Brand Title -->
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 via-sky-500 to-emerald-400 flex items-center justify-center shadow-md shadow-indigo-500/20">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white">2.5D MV プリビズ＆アニマティクス・スタジオ</h1>
+          <span class="hidden sm:inline-block text-[10px] font-mono-num px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">v2.5D</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Audio & Project I/O -->
+    <div class="flex flex-wrap items-center gap-1.5">
+      <label class="px-2.5 py-1 rounded-lg bg-[#1b202c] hover:bg-[#242b3b] border border-[#2d3546] text-xs font-medium text-slate-200 flex items-center gap-1.5 cursor-pointer transition">
+        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>
+        <span id="audio-label" class="max-w-[130px] truncate">デモ曲 (120BPM)</span>
+        <input id="audio-upload" type="file" accept="audio/*" class="hidden" />
+      </label>
+
+      <button id="export-json-btn" title="プロジェクト設定をJSON保存" class="px-2.5 py-1 rounded-lg bg-[#1b202c] hover:bg-[#242b3b] border border-[#2d3546] text-xs text-slate-300 flex items-center gap-1 transition cursor-pointer">
+        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span>JSON保存</span>
+      </button>
+
+      <label title="保存したJSONプロジェクトを読込" class="px-2.5 py-1 rounded-lg bg-[#1b202c] hover:bg-[#242b3b] border border-[#2d3546] text-xs text-slate-300 flex items-center gap-1 cursor-pointer transition">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        <span>JSON読込</span>
+        <input id="import-json-input" type="file" accept=".json,application/json" class="hidden" />
+      </label>
+    </div>
+
+    <!-- Right: AI Video Generation Export Tools -->
+    <div class="flex flex-wrap items-center gap-1.5">
+      <button id="export-start-png" class="px-2.5 py-1 rounded-lg bg-[#1b202c] hover:bg-indigo-950/70 hover:border-indigo-500/50 border border-[#2d3546] text-xs font-medium text-indigo-200 flex items-center gap-1 transition cursor-pointer" title="動画生成AIのFirst Frame指定用PNG">
+        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>開始PNG</span>
+      </button>
+
+      <button id="export-end-png" class="px-2.5 py-1 rounded-lg bg-[#1b202c] hover:bg-sky-950/70 hover:border-sky-500/50 border border-[#2d3546] text-xs font-medium text-sky-200 flex items-center gap-1 transition cursor-pointer" title="動画生成AIのLast Frame指定用PNG">
+        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>終了PNG</span>
+      </button>
+
+      <div class="flex items-center rounded-lg overflow-hidden border border-rose-500/40 bg-rose-600/90 shadow-sm">
+        <button id="record-cut-btn" class="px-2.5 py-1 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="選択中のカットだけを自動再生してWebM動画として書き出し">
+          <span id="rec-btn-dot" class="w-2 h-2 rounded-full bg-white"></span>
+          <span id="rec-btn-label">カット動画書き出し</span>
+        </button>
+        <button id="record-full-btn" class="px-2 py-1 bg-rose-700/90 hover:bg-rose-600 border-l border-rose-400/30 text-white text-[11px] font-medium transition cursor-pointer" title="MV全体を0秒から最後まで録画書き出し">
+          全体録画
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Non-blocking Toast Banner -->
+  <div id="toast" class="fixed top-14 right-4 z-50 transform transition-all duration-300 -translate-y-4 opacity-0 pointer-events-none">
+    <div class="px-3.5 py-2 rounded-xl bg-[#1a1f2b] border border-slate-700 shadow-2xl text-xs text-slate-100 flex items-center gap-2">
+      <span id="toast-icon" class="text-emerald-400 font-bold">✓</span>
+      <span id="toast-text">通知メッセージ</span>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MAIN WORKSPACE (3-Column Upper Area: Cut List | 2.5D Viewport | Inspector)
+       ===================================================================== -->
+  <div class="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+
+    <!-- LEFT COLUMN: Cut List Manager -->
+    <aside class="w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-[#222733] bg-[#11141b] flex flex-col shrink-0 max-h-60 lg:max-h-none">
+      <div class="p-2.5 border-b border-[#222733] bg-[#151922] flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+          カット一覧 (Cuts)
+        </span>
+        <div class="flex items-center gap-1">
+          <button id="add-cut-btn" class="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition cursor-pointer">+ 追加</button>
+          <button id="dup-cut-btn" class="px-2 py-1 rounded bg-[#212735] hover:bg-[#2b3345] text-slate-300 text-[11px] transition cursor-pointer" title="選択カットを複製">複製</button>
+          <button id="del-cut-btn" class="px-2 py-1 rounded bg-[#212735] hover:bg-rose-950/80 hover:text-rose-300 text-slate-400 text-[11px] transition cursor-pointer" title="選択カットを削除">削除</button>
+        </div>
+      </div>
+
+      <!-- Auto-Ripple Option -->
+      <div class="px-3 py-1.5 border-b border-[#1d222d] bg-[#131720] flex items-center justify-between text-[11px] text-slate-400">
+        <label class="flex items-center gap-1.5 cursor-pointer">
+          <input id="auto-ripple-chk" type="checkbox" checked class="rounded bg-[#0b0d11] border-slate-600 text-indigo-500 focus:ring-0" />
+          <span>後続カットの時間を自動連動</span>
+        </label>
+        <span id="total-cuts-badge" class="font-mono-num text-slate-500">3 cuts</span>
+      </div>
+
+      <!-- Scrollable Cut Cards -->
+      <div id="cut-list-container" class="flex-1 overflow-y-auto p-2 space-y-1.5">
+        <!-- Populated by JS -->
+      </div>
+    </aside>
+
+    <!-- CENTER COLUMN: 2.5D Three.js Stage Viewport -->
+    <section class="flex-1 flex flex-col bg-[#090b0f] min-w-0 min-h-[320px]">
+      <!-- Viewport Toolbar -->
+      <div class="px-3 py-1.5 border-b border-[#222733] bg-[#141821] flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <!-- Camera Mode Switcher -->
+        <div class="flex items-center bg-[#0c0e13] p-0.5 rounded-lg border border-[#242a37]">
+          <button id="mode-preview-btn" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-600 text-white shadow transition cursor-pointer">
+            🎬 タイムライン再生モード
+          </button>
+          <button id="mode-orbit-btn" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer">
+            🎥 自由カメラ編集モード
+          </button>
+        </div>
+
+        <!-- Capture Current View to Keyframe Buttons -->
+        <div class="flex items-center gap-1.5">
+          <button id="capture-start-cam-btn" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer" title="現在の3D視点を開始カメラ(0%)に記録">
+            <span>📍 現在の視点を開始カメラに記録</span>
+          </button>
+          <button id="capture-end-cam-btn" class="px-2.5 py-1 rounded-lg bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-300 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer" title="現在の3D視点を終了カメラ(100%)に記録">
+            <span>📍 終了カメラに記録</span>
+          </button>
+        </div>
+
+        <!-- Composition Overlays & Floor Grid Toggles -->
+        <div class="flex items-center gap-1.5 text-[11px]">
+          <button id="toggle-thirds-btn" class="px-2 py-1 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-medium cursor-pointer transition">三分割線</button>
+          <button id="toggle-safe-btn" class="px-2 py-1 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-medium cursor-pointer transition">セーフ枠</button>
+          <button id="toggle-floor-btn" class="px-2 py-1 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-medium cursor-pointer transition">3D床</button>
+        </div>
+      </div>
+
+      <!-- 16:9 Stage Container -->
+      <div class="flex-1 relative flex items-center justify-center p-2 sm:p-4 overflow-hidden bg-[#080a0e]">
+        <div id="stage-aspect-box" class="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden border border-[#262c3a] shadow-2xl">
+          <!-- Three.js Canvas (1280x720 internal resolution) -->
+          <canvas id="three-canvas" class="w-full h-full block"></canvas>
+
+          <!-- Composition Guide Overlay (SVG, excluded from PNG/WebM captures) -->
+          <svg id="guide-overlay" class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1280 720" preserveAspectRatio="none">
+            <!-- Rule of Thirds -->
+            <g id="guide-thirds" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4 4">
+              <line x1="426.6" y1="0" x2="426.6" y2="720" />
+              <line x1="853.3" y1="0" x2="853.3" y2="720" />
+              <line x1="0" y1="240" x2="1280" y2="240" />
+              <line x1="0" y1="480" x2="1280" y2="480" />
+              <!-- Center Crosshair -->
+              <line x1="628" y1="360" x2="652" y2="360" stroke="rgba(99,102,241,0.65)" stroke-dasharray="none" />
+              <line x1="640" y1="348" x2="640" y2="372" stroke="rgba(99,102,241,0.65)" stroke-dasharray="none" />
+            </g>
+            <!-- 16:9 Action Safe (90%) & Title Safe (80%) -->
+            <g id="guide-safe" fill="none">
+              <rect x="64" y="36" width="1152" height="648" stroke="rgba(56,189,248,0.28)" stroke-width="1" />
+              <rect x="128" y="72" width="1024" height="576" stroke="rgba(56,189,248,0.18)" stroke-width="1" stroke-dasharray="6 4" />
+            </g>
+          </svg>
+
+          <!-- Top-Left Viewport HUD -->
+          <div class="absolute top-2.5 left-2.5 pointer-events-none flex items-center gap-2">
+            <span id="hud-cut-badge" class="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/15 text-[11px] font-mono-num font-semibold text-white">
+              CUT 01 | 0.00s - 4.00s
+            </span>
+            <span id="hud-progress-badge" class="px-2 py-0.5 rounded bg-indigo-950/80 backdrop-blur-sm border border-indigo-400/30 text-[11px] font-mono-num text-indigo-200">
+              進行度: 0%
+            </span>
+          </div>
+
+          <!-- Top-Right Recording Indicator -->
+          <div id="hud-rec-badge" class="hidden absolute top-2.5 right-2.5 pointer-events-none items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-mono-num font-bold shadow-lg">
+            <span class="w-2 h-2 rounded-full bg-white rec-dot"></span>
+            <span id="hud-rec-text">REC 1280x720</span>
+          </div>
+
+          <!-- Bottom Orbit Mode Helper Hint -->
+          <div id="orbit-hint-banner" class="hidden absolute bottom-2.5 left-1/2 -translate-x-1/2 pointer-events-none px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-amber-400/40 text-[11px] text-amber-200 whitespace-nowrap">
+            左ドラッグ: 回転(Orbit) ／ 右ドラッグ or Shift+ドラッグ: 平行移動(Pan) ／ ホイール: ズーム
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Inspector (Cut Timing, 3D Camera Keyframes, Layer & Character Motion) -->
+    <aside class="w-full lg:w-80 xl:w-[370px] border-t lg:border-t-0 lg:border-l border-[#222733] bg-[#11141b] flex flex-col shrink-0 max-h-[460px] lg:max-h-none">
+      <!-- Inspector Tabs -->
+      <div class="grid grid-cols-3 border-b border-[#222733] bg-[#151922] text-xs font-semibold shrink-0">
+        <button data-tab="camera" class="inspector-tab py-2.5 text-indigo-400 border-b-2 border-indigo-500 bg-[#1a1f2b] cursor-pointer transition">
+          🎥 3Dカメラ
+        </button>
+        <button data-tab="layers" class="inspector-tab py-2.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent cursor-pointer transition">
+          🧍 レイヤー/キャラ
+        </button>
+        <button data-tab="timing" class="inspector-tab py-2.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent cursor-pointer transition">
+          ⏱️ カット設定
+        </button>
+      </div>
+
+      <!-- Inspector Body -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+
+        <!-- TAB 1: 3D CAMERA WORK -->
+        <div id="tab-camera" class="space-y-3">
+          <!-- Quick Camera Presets -->
+          <div class="p-2.5 rounded-xl bg-[#161a23] border border-[#232936] space-y-2">
+            <div class="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+              <span>カメラワーク・プリセット (ワンクリック適用)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button data-cam-preset="dollyIn" class="cam-preset-btn px-2 py-1.5 rounded-lg bg-[#1e2432] hover:bg-indigo-600/30 hover:border-indigo-500/50 border border-[#2c3446] text-[11px] text-left text-slate-200 transition cursor-pointer">
+                🔍 ゆっくりズームイン
+              </button>
+              <button data-cam-preset="pullOut" class="cam-preset-btn px-2 py-1.5 rounded-lg bg-[#1e2432] hover:bg-indigo-600/30 hover:border-indigo-500/50 border border-[#2c3446] text-[11px] text-left text-slate-200 transition cursor-pointer">
+                🔭 引き・ズームアウト
+              </button>
+              <button data-cam-preset="orbitLR" class="cam-preset-btn px-2 py-1.5 rounded-lg bg-[#1e2432] hover:bg-indigo-600/30 hover:border-indigo-500/50 border border-[#2c3446] text-[11px] text-left text-slate-200 transition cursor-pointer">
+                🔄 左から右へ回り込み
+              </button>
+              <button data-cam-preset="lowTilt" class="cam-preset-btn px-2 py-1.5 rounded-lg bg-[#1e2432] hover:bg-indigo-600/30 hover:border-indigo-500/50 border border-[#2c3446] text-[11px] text-left text-slate-200 transition cursor-pointer">
+                📐 ローアングル煽りアップ
+              </button>
+              <button data-cam-preset="panLR" class="cam-preset-btn col-span-2 px-2 py-1.5 rounded-lg bg-[#1e2432] hover:bg-indigo-600/30 hover:border-indigo-500/50 border border-[#2c3446] text-[11px] text-left text-slate-200 transition cursor-pointer">
+                ↔️ 水平パン移動（背景とキャラの視差確認）
+              </button>
+            </div>
+          </div>
+
+          <!-- Easing Selector -->
+          <div class="p-2.5 rounded-xl bg-[#161a23] border border-[#232936] flex items-center justify-between gap-2">
+            <span class="text-[11px] font-semibold text-slate-300">カメラ加減速 (Easing):</span>
+            <select id="cut-easing-select" class="bg-[#0d1016] border border-[#2c3446] rounded-lg px-2 py-1 text-xs text-slate-200 outline-none">
+              <option value="easeInOut">Ease In-Out (滑らか)</option>
+              <option value="linear">Linear (一定速度)</option>
+              <option value="easeOut">Ease Out (減速ストップ)</option>
+              <option value="easeIn">Ease In (加速)</option>
+            </select>
+          </div>
+
+          <!-- Start Camera Coordinates -->
+          <div class="p-2.5 rounded-xl bg-[#161a23] border border-emerald-500/25 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-emerald-400">開始カメラ (Start 0%)</span>
+              <button id="copy-start-to-end-btn" class="text-[10px] px-2 py-0.5 rounded bg-[#202634] hover:bg-[#2a3244] text-slate-300 cursor-pointer">終了へコピー ↓</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 font-mono-num text-[11px]">
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos X</span><input id="cam-sx" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos Y</span><input id="cam-sy" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos Z</span><input id="cam-sz" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 X</span><input id="cam-stx" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 Y</span><input id="cam-sty" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 Z</span><input id="cam-stz" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 font-mono-num text-[11px]">
+              <label class="block"><span class="text-slate-500 text-[10px]">画角 FOV (°)</span><input id="cam-sfov" type="number" min="15" max="110" step="1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">傾き Roll (°)</span><input id="cam-sroll" type="number" min="-180" max="180" step="1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+            </div>
+          </div>
+
+          <!-- End Camera Coordinates -->
+          <div class="p-2.5 rounded-xl bg-[#161a23] border border-amber-500/25 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-amber-400">終了カメラ (End 100%)</span>
+              <button id="copy-end-to-start-btn" class="text-[10px] px-2 py-0.5 rounded bg-[#202634] hover:bg-[#2a3244] text-slate-300 cursor-pointer">開始へコピー ↑</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 font-mono-num text-[11px]">
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos X</span><input id="cam-ex" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos Y</span><input id="cam-ey" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">Pos Z</span><input id="cam-ez" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 X</span><input id="cam-etx" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 Y</span><input id="cam-ety" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">注視 Z</span><input id="cam-etz" type="number" step="0.1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 font-mono-num text-[11px]">
+              <label class="block"><span class="text-slate-500 text-[10px]">画角 FOV (°)</span><input id="cam-efov" type="number" min="15" max="110" step="1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+              <label class="block"><span class="text-slate-500 text-[10px]">傾き Roll (°)</span><input id="cam-eroll" type="number" min="-180" max="180" step="1" class="w-full mt-0.5 bg-[#0c0e13] border border-[#283040] rounded px-1.5 py-1 text-slate-200" /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: 2.5D LAYERS & CHARACTER MOTION -->
+        <div id="tab-layers" class="hidden space-y-3">
+          <div class="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/25 text-[11px] text-indigo-200 leading-relaxed">
+            各レイヤーに独自の絵コンテ・立ち絵PNGを読み込み、3D空間の奥行き(Z)と移動経路を設定できます。
+          </div>
+          <div id="layers-inspector-container" class="space-y-2.5">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+        <!-- TAB 3: CUT TIMING & MEMO -->
+        <div id="tab-timing" class="hidden space-y-3">
+          <div class="p-3 rounded-xl bg-[#161a23] border border-[#232936] space-y-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 mb-1">カットタイトル / 演出メモ</label>
+              <input id="cut-name-input" type="text" class="w-full bg-[#0c0e13] border border-[#283040] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-indigo-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 font-mono-num">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">開始秒 (Start sec)</label>
+                <input id="cut-start-input" type="number" min="0" step="0.05" class="w-full bg-[#0c0e13] border border-[#283040] rounded-lg px-2.5 py-1.5 text-xs text-white" />
+              </div>
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">終了秒 (End sec)</label>
+                <input id="cut-end-input" type="number" min="0.1" step="0.05" class="w-full bg-[#0c0e13] border border-[#283040] rounded-lg px-2.5 py-1.5 text-xs text-white" />
+              </div>
+            </div>
+
+            <div class="pt-1 border-t border-[#222836] flex items-center justify-between text-[11px]">
+              <span class="text-slate-400">カット尺 (Duration):</span>
+              <span id="cut-duration-display" class="font-mono-num font-bold text-indigo-300">4.00 秒</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- =====================================================================
+       BOTTOM PANEL: Audio Transport & High-DPI Waveform Cut Timeline
+       ===================================================================== -->
+  <footer class="h-48 sm:h-52 border-t border-[#222733] bg-[#12151d] flex flex-col shrink-0 z-20">
+    <!-- Transport Toolbar -->
+    <div class="px-3 py-1.5 border-b border-[#1e232e] bg-[#161a23] flex flex-wrap items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-1.5">
+        <button id="rewind-btn" class="p-1.5 rounded-lg bg-[#202634] hover:bg-[#2a3244] text-slate-200 transition cursor-pointer" title="最初(0:00)へ戻る">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+          </svg>
+        </button>
+
+        <button id="jump-cut-start-btn" class="px-2 py-1 rounded-lg bg-[#202634] hover:bg-[#2a3244] text-slate-200 text-[11px] font-medium transition cursor-pointer" title="選択カットの開始位置へ頭出し">
+          ⏪ カット頭出し
+        </button>
+
+        <button id="play-pause-btn" class="px-3.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition cursor-pointer" title="Spaceキーで再生/一時停止">
+          <span id="play-icon">▶</span>
+          <span id="play-label">再生</span>
+        </button>
+
+        <button id="loop-cut-btn" class="px-2.5 py-1 rounded-lg bg-[#202634] hover:bg-[#2a3244] border border-[#2f374a] text-slate-300 text-[11px] font-medium flex items-center gap-1 transition cursor-pointer" title="選択中のカットだけを繰り返し再生してタイミング確認">
+          <span>🔁 単一カットループ</span>
+        </button>
+      </div>
+
+      <!-- Timecode Readout -->
+      <div class="flex items-center gap-2 bg-[#0b0d12] px-3 py-1 rounded-lg border border-[#232936]">
+        <span id="timecode-current" class="font-mono-num text-xs sm:text-sm font-bold text-indigo-400">00:00.00</span>
+        <span class="text-slate-600 text-xs">/</span>
+        <span id="timecode-total" class="font-mono-num text-xs text-slate-400">00:16.00</span>
+      </div>
+
+      <!-- Playback Speed & Timeline Zoom -->
+      <div class="flex items-center gap-2 text-[11px]">
+        <div class="flex items-center bg-[#0d1016] rounded-lg p-0.5 border border-[#232936]">
+          <button id="speed-half-btn" class="px-2 py-0.5 rounded text-slate-400 hover:text-white font-mono-num cursor-pointer">0.5x</button>
+          <button id="speed-normal-btn" class="px-2 py-0.5 rounded bg-indigo-600 text-white font-mono-num font-semibold cursor-pointer">1.0x</button>
+        </div>
+        <span class="hidden sm:inline text-slate-500">波形クリックでシーク / カット端ドラッグで尺調整</span>
+      </div>
+    </div>
+
+    <!-- High-DPI Waveform & Cut Blocks Canvas -->
+    <div id="timeline-wrapper" class="flex-1 relative w-full overflow-hidden bg-[#0c0e13] cursor-pointer">
+      <canvas id="timeline-canvas" class="w-full h-full block"></canvas>
+    </div>
+  </footer>
+
+  <!-- Hidden Audio Element -->
+  <audio id="mv-audio" preload="auto"></audio>
+
+  <script>
+    // =========================================================================
+    // 1. UTILITY & EASING FUNCTIONS
+    // =========================================================================
+    const EASINGS = {
+      linear: t => t,
+      easeInOut: t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
+      easeOut: t => 1 - Math.pow(1 - t, 3),
+      easeIn: t => t * t * t
+    };
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    function formatTimecode(sec) {
+      const s = Math.max(0, sec);
+      const mins = String(Math.floor(s / 60)).padStart(2, '0');
+      const secs = String(Math.floor(s % 60)).padStart(2, '0');
+      const hundredths = String(Math.floor((s % 1) * 100)).padStart(2, '0');
+      return `${mins}:${secs}.${hundredths}`;
+    }
+
+    let toastTimer = null;
+    function showToast(msg, type = 'ok') {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-text');
+      text.textContent = msg;
+      if (type === 'error') {
+        icon.textContent = '▲';
+        icon.className = 'text-rose-400 font-bold';
+      } else if (type === 'rec') {
+        icon.textContent = '●';
+        icon.className = 'text-rose-500 rec-dot font-bold';
+      } else {
+        icon.textContent = '✓';
+        icon.className = 'text-emerald-400 font-bold';
+      }
+      toast.classList.remove('-translate-y-4', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-4', 'opacity-0');
+      }, 3200);
+    }
+
+    // =========================================================================
+    // 2. PROCEDURAL PLACEHOLDER TEXTURES (2.5D MULTI-PLANE ASSETS)
+    // =========================================================================
+    function createDefaultTextures() {
+      // A. Background Layer (1280x720 Starry Twilight Sky & Horizon)
+      const bgCanvas = document.createElement('canvas');
+      bgCanvas.width = 1280;
+      bgCanvas.height = 720;
+      const bgCtx = bgCanvas.getContext('2d');
+      const skyGrad = bgCtx.createLinearGradient(0, 0, 0, 720);
+      skyGrad.addColorStop(0, '#090d1e');
+      skyGrad.addColorStop(0.5, '#172347');
+      skyGrad.addColorStop(0.82, '#3b2d63');
+      skyGrad.addColorStop(1, '#7c3f68');
+      bgCtx.fillStyle = skyGrad;
+      bgCtx.fillRect(0, 0, 1280, 720);
+
+      // Stars
+      for (let i = 0; i < 180; i++) {
+        const sx = (i * 197) % 1280;
+        const sy = (i * 89) % 520;
+        const r = (i % 3 === 0) ? 1.8 : 1.0;
+        bgCtx.fillStyle = `rgba(255, 255, 255, ${0.35 + (i % 6) * 0.1})`;
+        bgCtx.beginPath();
+        bgCtx.arc(sx, sy, r, 0, Math.PI * 2);
+        bgCtx.fill();
+      }
+      // Glowing Moon
+      const moonGrad = bgCtx.createRadialGradient(960, 175, 12, 960, 175, 130);
+      moonGrad.addColorStop(0, 'rgba(255, 250, 225, 0.95)');
+      moonGrad.addColorStop(0.28, 'rgba(253, 230, 138, 0.45)');
+      moonGrad.addColorStop(1, 'rgba(253, 230, 138, 0)');
+      bgCtx.fillStyle = moonGrad;
+      bgCtx.beginPath();
+      bgCtx.arc(960, 175, 130, 0, Math.PI * 2);
+      bgCtx.fill();
+
+      bgCtx.fillStyle = 'rgba(255,255,255,0.16)';
+      bgCtx.font = '600 18px sans-serif';
+      bgCtx.fillText('BG LAYER (背景絵コンテ差し替え可)', 36, 48);
+
+      // B. Midground Layer (1280x720 Transparent City Skyline & Neon Stage)
+      const midCanvas = document.createElement('canvas');
+      midCanvas.width = 1280;
+      midCanvas.height = 720;
+      const mCtx = midCanvas.getContext('2d');
+      mCtx.clearRect(0, 0, 1280, 720);
+
+      // Distant city buildings
+      const buildings = [
+        [20, 410, 110, 310], [140, 350, 95, 370], [250, 430, 130, 290],
+        [400, 380, 90, 340], [790, 360, 115, 360], [920, 405, 140, 315],
+        [1075, 330, 105, 390], [1190, 420, 90, 300]
+      ];
+      buildings.forEach(([bx, by, bw, bh], idx) => {
+        mCtx.fillStyle = '#0d1326';
+        mCtx.fillRect(bx, by, bw, bh);
+        mCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        mCtx.lineWidth = 1.5;
+        mCtx.strokeRect(bx, by, bw, bh);
+        // Lit windows
+        mCtx.fillStyle = idx % 2 === 0 ? 'rgba(56, 189, 248, 0.45)' : 'rgba(250, 204, 21, 0.4)';
+        for (let wy = by + 18; wy < 650; wy += 24) {
+          for (let wx = bx + 14; wx < bx + bw - 16; wx += 22) {
+            if ((wx + wy) % 3 !== 0) mCtx.fillRect(wx, wy, 10, 12);
+          }
+        }
+      });
+
+      // Stage Floor Horizon Line
+      const stageGrad = mCtx.createLinearGradient(0, 620, 0, 720);
+      stageGrad.addColorStop(0, 'rgba(30, 41, 82, 0.88)');
+      stageGrad.addColorStop(1, 'rgba(12, 16, 33, 0.98)');
+      mCtx.fillStyle = stageGrad;
+      mCtx.fillRect(0, 620, 1280, 100);
+      mCtx.strokeStyle = '#38bdf8';
+      mCtx.lineWidth = 3;
+      mCtx.beginPath();
+      mCtx.moveTo(0, 620);
+      mCtx.lineTo(1280, 620);
+      mCtx.stroke();
+
+      // C. Character Layer (640x900 Transparent Anime Character Cutout Silhouette)
+      const charCanvas = document.createElement('canvas');
+      charCanvas.width = 640;
+      charCanvas.height = 900;
+      const cCtx = charCanvas.getContext('2d');
+      cCtx.clearRect(0, 0, 640, 900);
+
+      // Soft aura behind character
+      const aura = cCtx.createRadialGradient(320, 420, 30, 320, 420, 260);
+      aura.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+      aura.addColorStop(1, 'rgba(99, 102, 241, 0)');
+      cCtx.fillStyle = aura;
+      cCtx.fillRect(0, 0, 640, 900);
+
+      cCtx.save();
+      cCtx.translate(320, 860); // Anchor at feet
+
+      // Legs
+      cCtx.fillStyle = '#1e2438';
+      cCtx.beginPath();
+      cCtx.moveTo(-42, -330); cCtx.lineTo(-18, -330); cCtx.lineTo(-24, -10); cCtx.lineTo(-54, -10);
+      cCtx.closePath();
+      cCtx.fill();
+      cCtx.beginPath();
+      cCtx.moveTo(18, -330); cCtx.lineTo(42, -330); cCtx.lineTo(54, -10); cCtx.lineTo(24, -10);
+      cCtx.closePath();
+      cCtx.fill();
+
+      // Skirt / Coat silhouette
+      const coatGrad = cCtx.createLinearGradient(0, -560, 0, -290);
+      coatGrad.addColorStop(0, '#312e81');
+      coatGrad.addColorStop(1, '#1e1b4b');
+      cCtx.fillStyle = coatGrad;
+      cCtx.beginPath();
+      cCtx.moveTo(-55, -550);
+      cCtx.lineTo(55, -550);
+      cCtx.lineTo(95, -300);
+      cCtx.lineTo(-95, -300);
+      cCtx.closePath();
+      cCtx.fill();
+      cCtx.strokeStyle = '#818cf8';
+      cCtx.lineWidth = 3;
+      cCtx.stroke();
+
+      // Dynamic Scarf / Ribbon
+      cCtx.fillStyle = '#f43f5e';
+      cCtx.beginPath();
+      cCtx.moveTo(-25, -555);
+      cCtx.quadraticCurveTo(85, -540, 145, -470);
+      cCtx.quadraticCurveTo(75, -495, -10, -535);
+      cCtx.closePath();
+      cCtx.fill();
+
+      // Arms (Dynamic singing/reaching pose)
+      cCtx.strokeStyle = '#c7d2fe';
+      cCtx.lineWidth = 18;
+      cCtx.lineCap = 'round';
+      cCtx.beginPath();
+      cCtx.moveTo(-52, -535);
+      cCtx.quadraticCurveTo(-115, -460, -85, -390);
+      cCtx.stroke();
+
+      cCtx.beginPath();
+      cCtx.moveTo(52, -535);
+      cCtx.quadraticCurveTo(118, -575, 142, -635);
+      cCtx.stroke();
+
+      // Head & Anime Hair Silhouette
+      cCtx.fillStyle = '#e0e7ff';
+      cCtx.beginPath();
+      cCtx.arc(0, -625, 52, 0, Math.PI * 2);
+      cCtx.fill();
+
+      // Hair back & bangs
+      cCtx.fillStyle = '#1e1b4b';
+      cCtx.beginPath();
+      cCtx.arc(0, -635, 60, Math.PI * 0.85, Math.PI * 2.15);
+      cCtx.lineTo(72, -540);
+      cCtx.lineTo(42, -585);
+      cCtx.lineTo(0, -605);
+      cCtx.lineTo(-42, -585);
+      cCtx.lineTo(-72, -540);
+      cCtx.closePath();
+      cCtx.fill();
+      cCtx.strokeStyle = '#38bdf8';
+      cCtx.lineWidth = 2.5;
+      cCtx.stroke();
+
+      // Animatic Registration Guides on Character
+      cCtx.strokeStyle = 'rgba(52, 211, 153, 0.85)';
+      cCtx.lineWidth = 2;
+      cCtx.setLineDash([6, 4]);
+      cCtx.beginPath();
+      cCtx.moveTo(0, -720);
+      cCtx.lineTo(0, 0);
+      cCtx.stroke();
+      cCtx.setLineDash([]);
+
+      // Ground Contact Ring
+      cCtx.strokeStyle = '#34d399';
+      cCtx.lineWidth = 3;
+      cCtx.beginPath();
+      cCtx.ellipse(0, 0, 75, 16, 0, 0, Math.PI * 2);
+      cCtx.stroke();
+
+      cCtx.fillStyle = '#34d399';
+      cCtx.font = 'bold 18px sans-serif';
+      cCtx.textAlign = 'center';
+      cCtx.fillText('CHAR LAYER (透過PNG対応)', 0, 28);
+      cCtx.restore();
+
+      // D. Foreground Layer (1280x720 Bokeh Light Particles)
+      const fgCanvas = document.createElement('canvas');
+      fgCanvas.width = 1280;
+      fgCanvas.height = 720;
+      const fCtx = fgCanvas.getContext('2d');
+      fCtx.clearRect(0, 0, 1280, 720);
+      const bokehs = [
+        [120, 140, 48, 'rgba(56,189,248,0.22)'],
+        [1140, 190, 62, 'rgba(244,114,182,0.20)'],
+        [210, 590, 54, 'rgba(129,140,248,0.22)'],
+        [1060, 560, 44, 'rgba(52,211,153,0.22)'],
+        [640, 110, 32, 'rgba(250,204,21,0.18)']
+      ];
+      bokehs.forEach(([bx, by, br, col]) => {
+        const g = fCtx.createRadialGradient(bx, by, 4, bx, by, br);
+        g.addColorStop(0, col);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        fCtx.fillStyle = g;
+        fCtx.beginPath();
+        fCtx.arc(bx, by, br, 0, Math.PI * 2);
+        fCtx.fill();
+      });
+
+      return {
+        bg: bgCanvas.toDataURL('image/png'),
+        mid: midCanvas.toDataURL('image/png'),
+        char: charCanvas.toDataURL('image/png'),
+        fg: fgCanvas.toDataURL('image/png')
+      };
+    }
+
+    // =========================================================================
+    // 3. BUILT-IN 120 BPM SYNTHESIZED DEMO AUDIO (OfflineAudioContext -> WAV)
+    // =========================================================================
+    async function generateDemoTrackWav(durationSec = 16) {
+      const sampleRate = 44100;
+      const totalSamples = sampleRate * durationSec;
+      const offlineCtx = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+      const bpm = 120;
+      const beatDur = 60 / bpm; // 0.5s per beat
+      const totalBeats = Math.floor(durationSec / beatDur);
+
+      // Master Gain
+      const master = offlineCtx.createGain();
+      master.gain.value = 0.55;
+      master.connect(offlineCtx.destination);
+
+      // White noise buffer for snare & hi-hat
+      const noiseBuffer = offlineCtx.createBuffer(1, sampleRate * 1.0, sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = Math.random() * 2 - 1;
+      }
+
+      // Chord progression: Am - F - C - G (each 1 bar = 4 beats = 2.0s)
+      const chords = [
+        [220.00, 261.63, 329.63, 440.00], // Am
+        [174.61, 220.00, 261.63, 349.23], // F
+        [130.81, 196.00, 261.63, 329.63], // C
+        [196.00, 246.94, 293.66, 392.00]  // G
+      ];
+      const bassRoots = [110.00, 87.31, 65.41, 98.00];
+
+      for (let b = 0; b < totalBeats; b++) {
+        const t = b * beatDur;
+        const bar = Math.floor(b / 4) % 4;
+        const beatInBar = b % 4;
+        const isChorus = t >= 8.0; // Drop at 8.0s (Cut 3)
+
+        // 1. Kick Drum on every beat
+        const kickOsc = offlineCtx.createOscillator();
+        const kickGain = offlineCtx.createGain();
+        kickOsc.type = 'sine';
+        kickOsc.frequency.setValueAtTime(145, t);
+        kickOsc.frequency.exponentialRampToValueAtTime(44, t + 0.14);
+        kickGain.gain.setValueAtTime(isChorus ? 0.9 : 0.72, t);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        kickOsc.connect(kickGain);
+        kickGain.connect(master);
+        kickOsc.start(t);
+        kickOsc.stop(t + 0.3);
+
+        // 2. Snare / Clap on beats 1 and 3 (2 & 4 in 1-based)
+        if (beatInBar === 1 || beatInBar === 3) {
+          const snare = offlineCtx.createBufferSource();
+          snare.buffer = noiseBuffer;
+          const filter = offlineCtx.createBiquadFilter();
+          filter.type = 'highpass';
+          filter.frequency.value = 900;
+          const snareGain = offlineCtx.createGain();
+          snareGain.gain.setValueAtTime(isChorus ? 0.45 : 0.3, t);
+          snareGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          snare.connect(filter);
+          filter.connect(snareGain);
+          snareGain.connect(master);
+          snare.start(t);
+          snare.stop(t + 0.24);
+        }
+
+        // 3. Offbeat Hi-hats
+        for (let sub = 0; sub < 2; sub++) {
+          const ht = t + sub * (beatDur / 2);
+          const hat = offlineCtx.createBufferSource();
+          hat.buffer = noiseBuffer;
+          const hFilter = offlineCtx.createBiquadFilter();
+          hFilter.type = 'highpass';
+          hFilter.frequency.value = 6500;
+          const hatGain = offlineCtx.createGain();
+          hatGain.gain.setValueAtTime(sub === 1 ? 0.18 : 0.08, ht);
+          hatGain.gain.exponentialRampToValueAtTime(0.001, ht + 0.07);
+          hat.connect(hFilter);
+          hFilter.connect(hatGain);
+          hatGain.connect(master);
+          hat.start(ht);
+          hat.stop(ht + 0.08);
+        }
+
+        // 4. Driving Synth Bass (8th notes)
+        for (let sub = 0; sub < 2; sub++) {
+          const bt = t + sub * (beatDur / 2);
+          const bassOsc = offlineCtx.createOscillator();
+          const bassFilter = offlineCtx.createBiquadFilter();
+          const bassGain = offlineCtx.createGain();
+          bassOsc.type = 'sawtooth';
+          bassOsc.frequency.setValueAtTime(bassRoots[bar] * (sub === 1 ? 2 : 1), bt);
+          bassFilter.type = 'lowpass';
+          bassFilter.frequency.setValueAtTime(isChorus ? 850 : 520, bt);
+          bassGain.gain.setValueAtTime(0.24, bt);
+          bassGain.gain.exponentialRampToValueAtTime(0.001, bt + 0.22);
+          bassOsc.connect(bassFilter);
+          bassFilter.connect(bassGain);
+          bassGain.connect(master);
+          bassOsc.start(bt);
+          bassOsc.stop(bt + 0.24);
+        }
+
+        // 5. Arpeggio Synth Lead (16th notes)
+        const chord = chords[bar];
+        for (let step = 0; step < 4; step++) {
+          const at = t + step * (beatDur / 4);
+          const note = chord[(b + step) % chord.length] * (isChorus ? 2 : 1);
+          const arpOsc = offlineCtx.createOscillator();
+          const arpGain = offlineCtx.createGain();
+          arpOsc.type = isChorus ? 'triangle' : 'sine';
+          arpOsc.frequency.setValueAtTime(note, at);
+          arpGain.gain.setValueAtTime(isChorus ? 0.18 : 0.12, at);
+          arpGain.gain.exponentialRampToValueAtTime(0.001, at + 0.18);
+          arpOsc.connect(arpGain);
+          arpGain.connect(master);
+          arpOsc.start(at);
+          arpOsc.stop(at + 0.2);
+        }
+      }
+
+      const renderedBuffer = await offlineCtx.startRendering();
+      const wavBlob = audioBufferToWavBlob(renderedBuffer);
+      return {
+        url: URL.createObjectURL(wavBlob),
+        buffer: renderedBuffer
+      };
+    }
+
+    // Encode AudioBuffer to 16-bit PCM WAV Blob
+    function audioBufferToWavBlob(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const length = buffer.length * numChannels * 2;
+      const arrayBuffer = new ArrayBuffer(44 + length);
+      const view = new DataView(arrayBuffer);
+
+      function writeString(offset, str) {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      }
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + length, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * numChannels * 2, true);
+      view.setUint16(32, numChannels * 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, length, true);
+
+      const channels = [];
+      for (let c = 0; c < numChannels; c++) {
+        channels.push(buffer.getChannelData(c));
+      }
+
+      let offset = 44;
+      for (let i = 0; i < buffer.length; i++) {
+        for (let c = 0; c < numChannels; c++) {
+          const sample = clamp(channels[c][i], -1, 1);
+          view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+          offset += 2;
+        }
+      }
+
+      return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+
+    // =========================================================================
+    // 4. APPLICATION STATE & SAMPLE 3-CUT PROJECT DATA
+    // =========================================================================
+    const CUT_COLORS = ['#6366f1', '#0ea5e9', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6'];
+    const DEFAULT_TEX = createDefaultTextures();
+
+    const state = {
+      duration: 16.0,
+      currentTime: 0.0,
+      isPlaying: false,
+      loopActiveCut: false,
+      playbackRate: 1.0,
+      cameraMode: 'preview', // 'preview' | 'orbit'
+      showThirds: true,
+      showSafe: true,
+      showFloor: true,
+      selectedCutId: 'cut-1',
+      waveformPeaks: [],
+
+      // 4 Multi-plane Layers in 3D Space
+      layers: [
+        { id: 'bg',   name: '背景 (Background)',      visible: true, imageUrl: DEFAULT_TEX.bg,   baseW: 24, baseH: 13.5, defaultZ: -10 },
+        { id: 'mid',  name: '中景・街並み (Midground)', visible: true, imageUrl: DEFAULT_TEX.mid,  baseW: 18, baseH: 10.125, defaultZ: -4.5 },
+        { id: 'char', name: 'キャラクター (Character)', visible: true, imageUrl: DEFAULT_TEX.char, baseW: 3.4, baseH: 4.8, defaultZ: 0 },
+        { id: 'fg',   name: '前景エフェクト (Foreground)', visible: true, imageUrl: DEFAULT_TEX.fg, baseW: 13, baseH: 7.3, defaultZ: 3.2 }
+      ],
+
+      // 3 Sample Cuts synced to the 16s 120BPM Demo Track
+      cuts: [
+        {
+          id: 'cut-1',
+          name: 'CUT 01: イントロ・ゆっくり寄り',
+          startTime: 0.0,
+          endTime: 4.0,
+          easing: 'easeInOut',
+          camera: {
+            start: { x: 0, y: 2.3, z: 8.5, tx: 0, ty: 2.1, tz: 0, fov: 45, roll: 0 },
+            end:   { x: 0, y: 2.5, z: 5.8, tx: 0, ty: 2.3, tz: 0, fov: 42, roll: 0 }
+          },
+          layers: {
+            bg:   { sx: 0, sy: 3.5, sz: -10, sScale: 1, sRot: 0, ex: 0, ey: 3.5, ez: -10, eScale: 1, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            mid:  { sx: 0, sy: 2.6, sz: -4.5, sScale: 1, sRot: 0, ex: 0, ey: 2.6, ez: -4.5, eScale: 1, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            char: { sx: 0, sy: 2.4, sz: 0, sScale: 1, sRot: 0, ex: 0, ey: 2.4, ez: 0.3, eScale: 1, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            fg:   { sx: -0.4, sy: 2.6, sz: 3.2, sScale: 1, sRot: 0, ex: 0.4, ey: 2.7, ez: 3.2, eScale: 1.05, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 }
+          }
+        },
+        {
+          id: 'cut-2',
+          name: 'CUT 02: キャラ前進＆歩行バウンス',
+          startTime: 4.0,
+          endTime: 8.0,
+          easing: 'linear',
+          camera: {
+            start: { x: -1.8, y: 1.6, z: 6.4, tx: 0, ty: 2.2, tz: 0, fov: 44, roll: -2 },
+            end:   { x: 1.4,  y: 2.2, z: 5.4, tx: 0, ty: 2.3, tz: 1.2, fov: 44, roll: 2 }
+          },
+          layers: {
+            bg:   { sx: 0, sy: 3.5, sz: -10, sScale: 1, sRot: 0, ex: 0, ey: 3.5, ez: -10, eScale: 1, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            mid:  { sx: 0, sy: 2.6, sz: -4.5, sScale: 1, sRot: 0, ex: 0, ey: 2.6, ez: -4.5, eScale: 1, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            char: { sx: -0.9, sy: 2.4, sz: -1.2, sScale: 0.95, sRot: 0, ex: 0.2, ey: 2.4, ez: 1.6, eScale: 1.05, eRot: 0, bobbing: true, bobFreq: 2.0, bobAmp: 0.14 },
+            fg:   { sx: 0.3, sy: 2.5, sz: 3.2, sScale: 1, sRot: 0, ex: -0.5, ey: 2.6, ez: 3.2, eScale: 1.08, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 }
+          }
+        },
+        {
+          id: 'cut-3',
+          name: 'CUT 03: サビ突入・ローアングル回り込み',
+          startTime: 8.0,
+          endTime: 16.0,
+          easing: 'easeOut',
+          camera: {
+            start: { x: -3.2, y: 1.1, z: 4.8, tx: 0, ty: 2.6, tz: 0, fov: 50, roll: -4 },
+            end:   { x: 2.8,  y: 2.8, z: 6.8, tx: 0, ty: 2.2, tz: 0, fov: 40, roll: 0 }
+          },
+          layers: {
+            bg:   { sx: 0, sy: 3.5, sz: -10, sScale: 1, sRot: 0, ex: 0, ey: 3.5, ez: -10, eScale: 1.04, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            mid:  { sx: 0, sy: 2.6, sz: -4.5, sScale: 1, sRot: 0, ex: 0, ey: 2.6, ez: -4.5, eScale: 1.02, eRot: 0, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 },
+            char: { sx: 0, sy: 2.4, sz: 0.4, sScale: 1.05, sRot: -3, ex: 0, ey: 2.5, ez: 0.8, eScale: 1.12, eRot: 2, bobbing: true, bobFreq: 2.0, bobAmp: 0.08 },
+            fg:   { sx: -0.6, sy: 2.5, sz: 3.2, sScale: 1.1, sRot: -5, ex: 0.8, ey: 2.8, ez: 3.2, eScale: 1.2, eRot: 6, bobbing: false, bobFreq: 2.0, bobAmp: 0.12 }
+          }
+        }
+      ]
+    };
+
+    // =========================================================================
+    // 5. THREE.JS 2.5D MULTI-PLANE STAGE SETUP
+    // =========================================================================
+    const threeCanvas = document.getElementById('three-canvas');
+    const renderer = new THREE.WebGLRenderer({
+      canvas: threeCanvas,
+      antialias: true,
+      preserveDrawingBuffer: true // Required for reliable PNG snapshots
+    });
+    renderer.setSize(1280, 720, false);
+    renderer.setPixelRatio(1); // Keep exact 1280x720 output resolution
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x07090e);
+
+    const camera = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 100);
+    camera.position.set(0, 2.3, 8.5);
+
+    // Subtle 3D Studio Floor Grid
+    const floorGrid = new THREE.GridHelper(28, 28, 0x3b486b, 0x1a2033);
+    floorGrid.position.y = 0;
+    scene.add(floorGrid);
+
+    // Texture Loader & Multi-Plane Meshes
+    const textureLoader = new THREE.TextureLoader();
+    const layerMeshes = {};
+
+    function applyTextureToLayer(layerObj, url) {
+      textureLoader.load(url, (tex) => {
+        tex.encoding = THREE.sRGBEncoding;
+        const mesh = layerMeshes[layerObj.id];
+        if (!mesh) return;
+        if (mesh.material.map) mesh.material.map.dispose();
+        mesh.material.map = tex;
+        mesh.material.needsUpdate = true;
+
+        // Adjust plane aspect ratio while preserving base height
+        if (tex.image && tex.image.width && tex.image.height) {
+          const aspect = tex.image.width / tex.image.height;
+          const newW = layerObj.baseH * aspect;
+          mesh.geometry.dispose();
+          mesh.geometry = new THREE.PlaneGeometry(newW, layerObj.baseH);
+        }
+      });
+    }
+
+    state.layers.forEach((layerObj, idx) => {
+      const geo = new THREE.PlaneGeometry(layerObj.baseW, layerObj.baseH);
+      const mat = new THREE.MeshBasicMaterial({
+        transparent: true,
+        alphaTest: 0.03,
+        side: THREE.DoubleSide,
+        depthWrite: layerObj.id === 'bg'
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.renderOrder = idx;
+      mesh.position.set(0, layerObj.baseH / 2, layerObj.defaultZ);
+      scene.add(mesh);
+      layerMeshes[layerObj.id] = mesh;
+      applyTextureToLayer(layerObj, layerObj.imageUrl);
+    });
+
+    // =========================================================================
+    // 6. FREE ORBIT / PAN / ZOOM CONTROLLER
+    // =========================================================================
+    const orbitState = {
+      target: new THREE.Vector3(0, 2.2, 0),
+      radius: 8.5,
+      theta: 0,
+      phi: Math.PI / 2 - 0.05,
+      roll: 0,
+      isDragging: false,
+      dragMode: 'orbit', // 'orbit' | 'pan'
+      lastX: 0,
+      lastY: 0
+    };
+
+    function syncOrbitFromCamera(camParams) {
+      orbitState.target.set(camParams.tx, camParams.ty, camParams.tz);
+      const offset = new THREE.Vector3(
+        camParams.x - camParams.tx,
+        camParams.y - camParams.ty,
+        camParams.z - camParams.tz
+      );
+      orbitState.radius = Math.max(0.5, offset.length());
+      orbitState.theta = Math.atan2(offset.x, offset.z);
+      orbitState.phi = clamp(Math.acos(clamp(offset.y / orbitState.radius, -1, 1)), 0.08, Math.PI - 0.08);
+      orbitState.roll = camParams.roll || 0;
+    }
+
+    function updateCameraFromOrbit() {
+      const sinPhi = Math.sin(orbitState.phi);
+      const x = orbitState.target.x + orbitState.radius * sinPhi * Math.sin(orbitState.theta);
+      const y = orbitState.target.y + orbitState.radius * Math.cos(orbitState.phi);
+      const z = orbitState.target.z + orbitState.radius * sinPhi * Math.cos(orbitState.theta);
+      camera.position.set(x, y, z);
+      camera.lookAt(orbitState.target);
+      camera.rotateZ(THREE.MathUtils.degToRad(orbitState.roll));
+    }
+
+    threeCanvas.addEventListener('contextmenu', e => e.preventDefault());
+    threeCanvas.addEventListener('mousedown', (e) => {
+      if (state.cameraMode !== 'orbit') return;
+      orbitState.isDragging = true;
+      orbitState.dragMode = (e.button === 2 || e.shiftKey) ? 'pan' : 'orbit';
+      orbitState.lastX = e.clientX;
+      orbitState.lastY = e.clientY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!orbitState.isDragging || state.cameraMode !== 'orbit') return;
+      const dx = e.clientX - orbitState.lastX;
+      const dy = e.clientY - orbitState.lastY;
+      orbitState.lastX = e.clientX;
+      orbitState.lastY = e.clientY;
+
+      if (orbitState.dragMode === 'orbit') {
+        orbitState.theta -= dx * 0.007;
+        orbitState.phi = clamp(orbitState.phi - dy * 0.007, 0.08, Math.PI - 0.08);
+      } else {
+        const panSpeed = orbitState.radius * 0.0016;
+        const right = new THREE.Vector3();
+        const up = new THREE.Vector3();
+        camera.getWorldDirection(new THREE.Vector3());
+        right.setFromMatrixColumn(camera.matrix, 0);
+        up.setFromMatrixColumn(camera.matrix, 1);
+        orbitState.target.addScaledVector(right, -dx * panSpeed);
+        orbitState.target.addScaledVector(up, dy * panSpeed);
+      }
+      updateCameraFromOrbit();
+    });
+
+    window.addEventListener('mouseup', () => {
+      orbitState.isDragging = false;
+    });
+
+    threeCanvas.addEventListener('wheel', (e) => {
+      if (state.cameraMode !== 'orbit') return;
+      e.preventDefault();
+      orbitState.radius = clamp(orbitState.radius * (1 + e.deltaY * 0.001), 1.0, 40.0);
+      updateCameraFromOrbit();
+    }, { passive: false });
+
+    // =========================================================================
+    // 7. SCENE EVALUATION AT ANY TIMESTAMP (CAMERA + LAYERS + WALK BOBBING)
+    // =========================================================================
+    function getActiveCut() {
+      return state.cuts.find(c => c.id === state.selectedCutId) || state.cuts[0];
+    }
+
+    function findCutAtTime(t) {
+      for (let i = 0; i < state.cuts.length; i++) {
+        const c = state.cuts[i];
+        if (t >= c.startTime && t < c.endTime) return c;
+      }
+      return state.cuts[state.cuts.length - 1] || null;
+    }
+
+    function evaluateSceneAtTime(timeSec, forceCut = null, forcedLocalT = null) {
+      const cut = forceCut || findCutAtTime(timeSec);
+      if (!cut) return;
+
+      const cutDur = Math.max(0.01, cut.endTime - cut.startTime);
+      const rawProgress = forcedLocalT !== null
+        ? clamp(forcedLocalT, 0, 1)
+        : clamp((timeSec - cut.startTime) / cutDur, 0, 1);
+
+      const easeFn = EASINGS[cut.easing] || EASINGS.linear;
+      const p = easeFn(rawProgress);
+
+      // 1. Evaluate Camera if in Preview Mode (or forced export)
+      if (state.cameraMode === 'preview' || forcedLocalT !== null) {
+        const sc = cut.camera.start;
+        const ec = cut.camera.end;
+        const cx = lerp(sc.x, ec.x, p);
+        const cy = lerp(sc.y, ec.y, p);
+        const cz = lerp(sc.z, ec.z, p);
+        const tx = lerp(sc.tx, ec.tx, p);
+        const ty = lerp(sc.ty, ec.ty, p);
+        const tz = lerp(sc.tz, ec.tz, p);
+        const fov = lerp(sc.fov, ec.fov, p);
+        const roll = lerp(sc.roll, ec.roll, p);
+
+        camera.position.set(cx, cy, cz);
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+        camera.lookAt(tx, ty, tz);
+        camera.rotateZ(THREE.MathUtils.degToRad(roll));
+      }
+
+      // 2. Evaluate Multi-Plane Layers
+      state.layers.forEach(layerObj => {
+        const mesh = layerMeshes[layerObj.id];
+        if (!mesh) return;
+        mesh.visible = layerObj.visible;
+
+        const kf = cut.layers[layerObj.id];
+        if (!kf) return;
+
+        const lx = lerp(kf.sx, kf.ex, p);
+        let ly = lerp(kf.sy, kf.ey, p);
+        const lz = lerp(kf.sz, kf.ez, p);
+        const scale = lerp(kf.sScale, kf.eScale, p);
+        const rotDeg = lerp(kf.sRot, kf.eRot, p);
+
+        // Walk Bobbing (歩行バウンス)
+        if (kf.bobbing) {
+          const localElapsed = rawProgress * cutDur;
+          const bobOffset = Math.abs(Math.sin(localElapsed * Math.PI * (kf.bobFreq || 2.0))) * (kf.bobAmp || 0.12);
+          ly += bobOffset;
+        }
+
+        mesh.position.set(lx, ly, lz);
+        mesh.scale.set(scale, scale, 1);
+        mesh.rotation.z = THREE.MathUtils.degToRad(rotDeg);
+      });
+
+      // Update Viewport HUD
+      const cutIdx = state.cuts.findIndex(c => c.id === cut.id) + 1;
+      document.getElementById('hud-cut-badge').textContent =
+        `CUT ${String(cutIdx).padStart(2, '0')} | ${cut.startTime.toFixed(2)}s - ${cut.endTime.toFixed(2)}s`;
+      document.getElementById('hud-progress-badge').textContent =
+        `進行度: ${Math.round(rawProgress * 100)}%`;
+    }
+
+    // =========================================================================
+    // 8. AUDIO PLAYBACK & WAVEFORM RENDERING
+    // =========================================================================
+    const audioEl = document.getElementById('mv-audio');
+    const timelineCanvas = document.getElementById('timeline-canvas');
+    const tCtx = timelineCanvas.getContext('2d');
+
+    function extractWaveformPeaks(audioBuffer, numBuckets = 600) {
+      const channelData = audioBuffer.getChannelData(0);
+      const blockSize = Math.max(1, Math.floor(channelData.length / numBuckets));
+      const peaks = [];
+      for (let i = 0; i < numBuckets; i++) {
+        let max = 0;
+        const start = i * blockSize;
+        for (let j = 0; j < blockSize && start + j < channelData.length; j += 4) {
+          const v = Math.abs(channelData[start + j]);
+          if (v > max) max = v;
+        }
+        peaks.push(max);
+      }
+      return peaks;
+    }
+
+    function drawTimeline() {
+      const rect = timelineCanvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(300, Math.floor(rect.width));
+      const h = Math.max(100, Math.floor(rect.height));
+
+      if (timelineCanvas.width !== w * dpr || timelineCanvas.height !== h * dpr) {
+        timelineCanvas.width = w * dpr;
+        timelineCanvas.height = h * dpr;
+      }
+
+      tCtx.save();
+      tCtx.scale(dpr, dpr);
+
+      const rulerH = 22;
+      const bodyH = h - rulerH;
+      const totalDur = Math.max(1, state.duration);
+
+      // Background
+      tCtx.fillStyle = '#0c0e13';
+      tCtx.fillRect(0, 0, w, h);
+
+      // Top Ruler Bar
+      tCtx.fillStyle = '#141821';
+      tCtx.fillRect(0, 0, w, rulerH);
+      tCtx.strokeStyle = '#232936';
+      tCtx.beginPath();
+      tCtx.moveTo(0, rulerH);
+      tCtx.lineTo(w, rulerH);
+      tCtx.stroke();
+
+      // Time Ticks & Labels
+      const stepSec = totalDur <= 20 ? 1 : (totalDur <= 60 ? 5 : 10);
+      tCtx.fillStyle = '#64748b';
+      tCtx.font = '10px "JetBrains Mono", monospace';
+      for (let s = 0; s <= totalDur; s += stepSec) {
+        const x = (s / totalDur) * w;
+        tCtx.strokeStyle = '#2a3140';
+        tCtx.beginPath();
+        tCtx.moveTo(x, 12);
+        tCtx.lineTo(x, rulerH);
+        tCtx.stroke();
+        if (x < w - 35) {
+          tCtx.fillText(`${s.toFixed(0)}s`, x + 4, 15);
+        }
+      }
+
+      // Draw Cut Blocks over Waveform Area
+      state.cuts.forEach((cut, idx) => {
+        const x1 = (cut.startTime / totalDur) * w;
+        const x2 = (cut.endTime / totalDur) * w;
+        const cw = Math.max(4, x2 - x1);
+        const isSelected = cut.id === state.selectedCutId;
+        const baseColor = CUT_COLORS[idx % CUT_COLORS.length];
+
+        tCtx.fillStyle = isSelected ? `${baseColor}33` : `${baseColor}18`;
+        tCtx.fillRect(x1, rulerH + 2, cw, bodyH - 4);
+
+        tCtx.strokeStyle = isSelected ? '#ffffff' : `${baseColor}99`;
+        tCtx.lineWidth = isSelected ? 2 : 1;
+        tCtx.strokeRect(x1 + 0.5, rulerH + 2.5, cw - 1, bodyH - 5);
+
+        // Edge resize handles
+        tCtx.fillStyle = isSelected ? '#ffffff' : baseColor;
+        tCtx.fillRect(x1, rulerH + 2, 4, bodyH - 4);
+        tCtx.fillRect(x2 - 4, rulerH + 2, 4, bodyH - 4);
+
+        // Cut Header Pill
+        if (cw > 36) {
+          tCtx.fillStyle = isSelected ? '#ffffff' : '#cbd5e1';
+          tCtx.font = 'bold 11px "Inter", sans-serif';
+          tCtx.fillText(`CUT ${String(idx + 1).padStart(2, '0')}`, x1 + 8, rulerH + 17);
+        }
+      });
+
+      // Draw Audio Waveform Peaks
+      if (state.waveformPeaks.length > 0) {
+        const midY = rulerH + bodyH * 0.56;
+        const maxAmp = bodyH * 0.36;
+        const barW = w / state.waveformPeaks.length;
+
+        tCtx.fillStyle = 'rgba(56, 189, 248, 0.55)';
+        state.waveformPeaks.forEach((peak, i) => {
+          const x = i * barW;
+          const ph = Math.max(2, peak * maxAmp);
+          tCtx.fillRect(x, midY - ph, Math.max(1, barW - 0.6), ph * 2);
+        });
+      }
+
+      // Playhead Needle
+      const playX = clamp((state.currentTime / totalDur) * w, 0, w);
+      tCtx.strokeStyle = '#f43f5e';
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.moveTo(playX, 0);
+      tCtx.lineTo(playX, h);
+      tCtx.stroke();
+
+      // Playhead Top Triangle Cap
+      tCtx.fillStyle = '#f43f5e';
+      tCtx.beginPath();
+      tCtx.moveTo(playX - 6, 0);
+      tCtx.lineTo(playX + 6, 0);
+      tCtx.lineTo(playX, 9);
+      tCtx.closePath();
+      tCtx.fill();
+
+      tCtx.restore();
+    }
+
+    // Timeline Interactive Scrubbing & Cut Edge Resizing
+    const timelineDrag = {
+      active: false,
+      mode: 'scrub', // 'scrub' | 'resize-start' | 'resize-end'
+      cutId: null
+    };
+
+    function getTimeFromTimelineEvent(e) {
+      const rect = timelineCanvas.getBoundingClientRect();
+      const ratio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+      return ratio * state.duration;
+    }
+
+    timelineCanvas.addEventListener('mousedown', (e) => {
+      const rect = timelineCanvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      const w = rect.width;
+      const t = getTimeFromTimelineEvent(e);
+
+      timelineDrag.active = true;
+      timelineDrag.mode = 'scrub';
+
+      // Check if user grabbed near a cut edge (within 7px) in the body area
+      if (clickY > 22) {
+        for (let i = 0; i < state.cuts.length; i++) {
+          const c = state.cuts[i];
+          const x1 = (c.startTime / state.duration) * w;
+          const x2 = (c.endTime / state.duration) * w;
+          if (Math.abs(clickX - x1) <= 7) {
+            state.selectedCutId = c.id;
+            timelineDrag.mode = 'resize-start';
+            timelineDrag.cutId = c.id;
+            renderCutList();
+            syncInspectorFromState();
+            return;
+          }
+          if (Math.abs(clickX - x2) <= 7) {
+            state.selectedCutId = c.id;
+            timelineDrag.mode = 'resize-end';
+            timelineDrag.cutId = c.id;
+            renderCutList();
+            syncInspectorFromState();
+            return;
+          }
+        }
+
+        // Otherwise select the clicked cut and scrub
+        const clickedCut = findCutAtTime(t);
+        if (clickedCut && clickedCut.id !== state.selectedCutId) {
+          state.selectedCutId = clickedCut.id;
+          renderCutList();
+          syncInspectorFromState();
+        }
+      }
+
+      seekTo(t);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!timelineDrag.active) return;
+      const t = Number(getTimeFromTimelineEvent(e).toFixed(2));
+
+      if (timelineDrag.mode === 'scrub') {
+        seekTo(t);
+      } else {
+        const idx = state.cuts.findIndex(c => c.id === timelineDrag.cutId);
+        if (idx === -1) return;
+        const cut = state.cuts[idx];
+        const autoRipple = document.getElementById('auto-ripple-chk').checked;
+
+        if (timelineDrag.mode === 'resize-start') {
+          const minT = idx > 0 && !autoRipple ? state.cuts[idx - 1].endTime : 0;
+          cut.startTime = clamp(t, minT, cut.endTime - 0.2);
+        } else if (timelineDrag.mode === 'resize-end') {
+          const oldEnd = cut.endTime;
+          const maxT = idx < state.cuts.length - 1 && !autoRipple ? state.cuts[idx + 1].startTime : state.duration;
+          cut.endTime = clamp(t, cut.startTime + 0.2, maxT);
+          const delta = cut.endTime - oldEnd;
+          if (autoRipple && delta !== 0) {
+            for (let j = idx + 1; j < state.cuts.length; j++) {
+              state.cuts[j].startTime = Number((state.cuts[j].startTime + delta).toFixed(2));
+              state.cuts[j].endTime = Number((state.cuts[j].endTime + delta).toFixed(2));
+            }
+          }
+        }
+        renderCutList();
+        syncInspectorFromState();
+        drawTimeline();
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      timelineDrag.active = false;
+    });
+
+    function seekTo(sec) {
+      state.currentTime = clamp(sec, 0, state.duration);
+      if (audioEl.src && Math.abs(audioEl.currentTime - state.currentTime) > 0.04) {
+        audioEl.currentTime = state.currentTime;
+      }
+      const cutAtT = findCutAtTime(state.currentTime);
+      if (cutAtT && cutAtT.id !== state.selectedCutId && !state.loopActiveCut) {
+        state.selectedCutId = cutAtT.id;
+        renderCutList();
+        syncInspectorFromState();
+      }
+      updateTimecodeUI();
+      drawTimeline();
+    }
+
+    function updateTimecodeUI() {
+      document.getElementById('timecode-current').textContent = formatTimecode(state.currentTime);
+      document.getElementById('timecode-total').textContent = formatTimecode(state.duration);
+    }
+
+    function togglePlay(forcePlay = null) {
+      const nextState = forcePlay !== null ? forcePlay : !state.isPlaying;
+      if (nextState) {
+        if (state.currentTime >= state.duration - 0.02) {
+          seekTo(0);
+        }
+        state.isPlaying = true;
+        audioEl.playbackRate = state.playbackRate;
+        audioEl.play().catch(() => {});
+        document.getElementById('play-icon').textContent = '⏸';
+        document.getElementById('play-label').textContent = '一時停止';
+      } else {
+        state.isPlaying = false;
+        audioEl.pause();
+        document.getElementById('play-icon').textContent = '▶';
+        document.getElementById('play-label').textContent = '再生';
+      }
+    }
+
+    // =========================================================================
+    // 9. UI RENDERING: CUT LIST & INSPECTOR BINDINGS
+    // =========================================================================
+    function renderCutList() {
+      const container = document.getElementById('cut-list-container');
+      container.innerHTML = '';
+      document.getElementById('total-cuts-badge').textContent = `${state.cuts.length} cuts`;
+
+      state.cuts.forEach((cut, idx) => {
+        const isSelected = cut.id === state.selectedCutId;
+        const color = CUT_COLORS[idx % CUT_COLORS.length];
+        const dur = (cut.endTime - cut.startTime).toFixed(2);
+
+        const card = document.createElement('div');
+        card.className = `p-2.5 rounded-xl border transition cursor-pointer ${
+          isSelected
+            ? 'bg-[#1b2130] border-indigo-500 shadow-md shadow-indigo-500/10'
+            : 'bg-[#151922] hover:bg-[#191e29] border-[#222836]'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-1.5 mb-1">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${color}"></span>
+              <span class="text-xs font-bold text-white truncate">${cut.name}</span>
+            </div>
+            <span class="text-[10px] font-mono-num px-1.5 py-0.5 rounded bg-[#0c0e13] text-slate-300 shrink-0">${dur}s</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] font-mono-num text-slate-400">
+            <span>${cut.startTime.toFixed(2)}s → ${cut.endTime.toFixed(2)}s</span>
+            <span class="text-[10px] text-indigo-300">${cut.easing}</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          state.selectedCutId = cut.id;
+          if (state.cameraMode === 'orbit') {
+            syncOrbitFromCamera(cut.camera.start);
+            updateCameraFromOrbit();
+          }
+          seekTo(cut.startTime);
+          renderCutList();
+          syncInspectorFromState();
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    function syncInspectorFromState() {
+      const cut = getActiveCut();
+      if (!cut) return;
+
+      // Timing tab
+      document.getElementById('cut-name-input').value = cut.name;
+      document.getElementById('cut-start-input').value = cut.startTime.toFixed(2);
+      document.getElementById('cut-end-input').value = cut.endTime.toFixed(2);
+      document.getElementById('cut-duration-display').textContent = `${(cut.endTime - cut.startTime).toFixed(2)} 秒`;
+
+      // Camera tab
+      document.getElementById('cut-easing-select').value = cut.easing;
+      const sc = cut.camera.start;
+      const ec = cut.camera.end;
+      document.getElementById('cam-sx').value = sc.x;
+      document.getElementById('cam-sy').value = sc.y;
+      document.getElementById('cam-sz').value = sc.z;
+      document.getElementById('cam-stx').value = sc.tx;
+      document.getElementById('cam-sty').value = sc.ty;
+      document.getElementById('cam-stz').value = sc.tz;
+      document.getElementById('cam-sfov').value = sc.fov;
+      document.getElementById('cam-sroll').value = sc.roll;
+
+      document.getElementById('cam-ex').value = ec.x;
+      document.getElementById('cam-ey').value = ec.y;
+      document.getElementById('cam-ez').value = ec.z;
+      document.getElementById('cam-etx').value = ec.tx;
+      document.getElementById('cam-ety').value = ec.ty;
+      document.getElementById('cam-etz').value = ec.tz;
+      document.getElementById('cam-efov').value = ec.fov;
+      document.getElementById('cam-eroll').value = ec.roll;
+
+      // Layers tab
+      renderLayersInspector(cut);
+    }
+
+    function renderLayersInspector(cut) {
+      const container = document.getElementById('layers-inspector-container');
+      container.innerHTML = '';
+
+      state.layers.forEach(layerObj => {
+        const kf = cut.layers[layerObj.id];
+        const card = document.createElement('div');
+        card.className = 'p-2.5 rounded-xl bg-[#161a23] border border-[#232936] space-y-2';
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <label class="flex items-center gap-1.5 text-xs font-bold text-slate-200 cursor-pointer">
+              <input type="checkbox" class="layer-vis-chk rounded bg-[#0c0e13] border-slate-600 text-indigo-500" ${layerObj.visible ? 'checked' : ''} />
+              <span>${layerObj.name}</span>
+            </label>
+            <label class="px-2 py-0.5 rounded bg-[#212736] hover:bg-indigo-600/30 border border-[#30384c] text-[10px] text-indigo-200 cursor-pointer transition">
+              🖼️ 画像変更
+              <input type="file" accept="image/*" class="layer-img-input hidden" />
+            </label>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1 font-mono-num text-[10px]">
+            <label><span class="text-emerald-400">始X</span><input data-k="sx" type="number" step="0.1" value="${kf.sx}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-emerald-400">始Y</span><input data-k="sy" type="number" step="0.1" value="${kf.sy}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-emerald-400">始Z</span><input data-k="sz" type="number" step="0.1" value="${kf.sz}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-emerald-400">始倍</span><input data-k="sScale" type="number" step="0.05" value="${kf.sScale}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-emerald-400">始角</span><input data-k="sRot" type="number" step="1" value="${kf.sRot}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+
+            <label><span class="text-amber-400">終X</span><input data-k="ex" type="number" step="0.1" value="${kf.ex}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-amber-400">終Y</span><input data-k="ey" type="number" step="0.1" value="${kf.ey}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-amber-400">終Z</span><input data-k="ez" type="number" step="0.1" value="${kf.ez}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-amber-400">終倍</span><input data-k="eScale" type="number" step="0.05" value="${kf.eScale}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+            <label><span class="text-amber-400">終角</span><input data-k="eRot" type="number" step="1" value="${kf.eRot}" class="layer-kf w-full bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" /></label>
+          </div>
+
+          <div class="pt-1 border-t border-[#222836] flex items-center justify-between gap-2 text-[11px]">
+            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+              <input type="checkbox" class="layer-bob-chk rounded bg-[#0c0e13] border-slate-600 text-emerald-500" ${kf.bobbing ? 'checked' : ''} />
+              <span>歩行バウンス (Walk Bob)</span>
+            </label>
+            <div class="flex items-center gap-1 font-mono-num text-[10px] text-slate-400">
+              <span>歩調:</span>
+              <input type="number" step="0.2" min="0.5" max="6" value="${kf.bobFreq || 2.0}" class="layer-bob-freq w-11 bg-[#0c0e13] border border-[#283040] rounded px-1 py-0.5 text-slate-200" />
+              <span>Hz</span>
+            </div>
+          </div>
+        `;
+
+        // Visibility Toggle
+        card.querySelector('.layer-vis-chk').addEventListener('change', (e) => {
+          layerObj.visible = e.target.checked;
+        });
+
+        // Custom Image Upload
+        card.querySelector('.layer-img-input').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            layerObj.imageUrl = ev.target.result;
+            applyTextureToLayer(layerObj, layerObj.imageUrl);
+            showToast(`${layerObj.name} の画像を差し替えました`);
+          };
+          reader.readAsDataURL(file);
+        });
+
+        // Keyframe Numeric Inputs
+        card.querySelectorAll('.layer-kf').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const k = e.target.dataset.k;
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) kf[k] = val;
+          });
+        });
+
+        // Walk Bobbing Toggle & Frequency
+        card.querySelector('.layer-bob-chk').addEventListener('change', (e) => {
+          kf.bobbing = e.target.checked;
+        });
+        card.querySelector('.layer-bob-freq').addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) kf.bobFreq = val;
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    // Bind Camera Inputs to Active Cut
+    function bindCameraInputs() {
+      const mapping = [
+        ['cam-sx', 'start', 'x'], ['cam-sy', 'start', 'y'], ['cam-sz', 'start', 'z'],
+        ['cam-stx', 'start', 'tx'], ['cam-sty', 'start', 'ty'], ['cam-stz', 'start', 'tz'],
+        ['cam-sfov', 'start', 'fov'], ['cam-sroll', 'start', 'roll'],
+        ['cam-ex', 'end', 'x'], ['cam-ey', 'end', 'y'], ['cam-ez', 'end', 'z'],
+        ['cam-etx', 'end', 'tx'], ['cam-ety', 'end', 'ty'], ['cam-etz', 'end', 'tz'],
+        ['cam-efov', 'end', 'fov'], ['cam-eroll', 'end', 'roll']
+      ];
+      mapping.forEach(([id, endKey, prop]) => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          const cut = getActiveCut();
+          const val = parseFloat(e.target.value);
+          if (cut && !isNaN(val)) {
+            cut.camera[endKey][prop] = val;
+          }
+        });
+      });
+
+      document.getElementById('cut-easing-select').addEventListener('change', (e) => {
+        const cut = getActiveCut();
+        if (cut) {
+          cut.easing = e.target.value;
+          renderCutList();
+        }
+      });
+
+      document.getElementById('copy-start-to-end-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (!cut) return;
+        cut.camera.end = { ...cut.camera.start };
+        syncInspectorFromState();
+        showToast('開始カメラの数値を終了カメラへコピーしました');
+      });
+
+      document.getElementById('copy-end-to-start-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (!cut) return;
+        cut.camera.start = { ...cut.camera.end };
+        syncInspectorFromState();
+        showToast('終了カメラの数値を開始カメラへコピーしました');
+      });
+    }
+
+    // Camera Quick Presets
+    function applyCameraPreset(presetName) {
+      const cut = getActiveCut();
+      if (!cut) return;
+
+      const presets = {
+        dollyIn: {
+          start: { x: 0, y: 2.3, z: 8.6, tx: 0, ty: 2.2, tz: 0, fov: 45, roll: 0 },
+          end:   { x: 0, y: 2.5, z: 5.2, tx: 0, ty: 2.4, tz: 0, fov: 40, roll: 0 }
+        },
+        pullOut: {
+          start: { x: 0, y: 2.5, z: 4.8, tx: 0, ty: 2.4, tz: 0, fov: 42, roll: 0 },
+          end:   { x: 0, y: 2.2, z: 9.2, tx: 0, ty: 2.0, tz: 0, fov: 48, roll: 0 }
+        },
+        orbitLR: {
+          start: { x: -3.6, y: 2.2, z: 6.2, tx: 0, ty: 2.2, tz: 0, fov: 45, roll: -2 },
+          end:   { x: 3.6,  y: 2.2, z: 6.2, tx: 0, ty: 2.2, tz: 0, fov: 45, roll: 2 }
+        },
+        lowTilt: {
+          start: { x: 0.4, y: 0.8, z: 5.5, tx: 0, ty: 1.5, tz: 0, fov: 50, roll: -3 },
+          end:   { x: 0.2, y: 1.5, z: 4.8, tx: 0, ty: 3.2, tz: 0, fov: 44, roll: 0 }
+        },
+        panLR: {
+          start: { x: -2.8, y: 2.3, z: 6.5, tx: -2.2, ty: 2.3, tz: 0, fov: 45, roll: 0 },
+          end:   { x: 2.8,  y: 2.3, z: 6.5, tx: 2.2,  ty: 2.3, tz: 0, fov: 45, roll: 0 }
+        }
+      };
+
+      if (presets[presetName]) {
+        cut.camera.start = { ...presets[presetName].start };
+        cut.camera.end = { ...presets[presetName].end };
+        if (state.cameraMode === 'orbit') {
+          syncOrbitFromCamera(cut.camera.start);
+          updateCameraFromOrbit();
+        }
+        syncInspectorFromState();
+        showToast('カメラワーク・プリセットを適用しました');
+      }
+    }
+
+    // =========================================================================
+    // 10. AI VIDEO GENERATION EXPORT TOOLS (START/END PNG, WEBM, JSON)
+    // =========================================================================
+    function exportKeyframePNG(which) {
+      const cut = getActiveCut();
+      if (!cut) return;
+      const cutIdx = state.cuts.findIndex(c => c.id === cut.id) + 1;
+      const prevFloor = floorGrid.visible;
+      floorGrid.visible = false;
+
+      evaluateSceneAtTime(cut.startTime, cut, which === 'start' ? 0.0 : 1.0);
+      renderer.render(scene, camera);
+
+      const dataUrl = threeCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `cut${String(cutIdx).padStart(2, '0')}_${which}_frame.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      floorGrid.visible = prevFloor;
+      evaluateSceneAtTime(state.currentTime);
+      showToast(`CUT ${String(cutIdx).padStart(2, '0')} の${which === 'start' ? '開始(0%)' : '終了(100%)'}フレームPNGを保存しました`);
+    }
+
+    let recorderState = {
+      active: false,
+      mediaRecorder: null,
+      chunks: [],
+      stopAtTime: 0,
+      prevFloor: true
+    };
+
+    function startVideoExport(mode = 'cut') {
+      if (recorderState.active) {
+        stopVideoExport();
+        return;
+      }
+
+      if (typeof threeCanvas.captureStream !== 'function') {
+        showToast('お使いのブラウザは動画キャプチャに非対応です（PC版Chrome/Edge推奨）', 'error');
+        return;
+      }
+
+      const cut = getActiveCut();
+      const startSec = mode === 'cut' && cut ? cut.startTime : 0;
+      const endSec = mode === 'cut' && cut ? cut.endTime : state.duration;
+
+      // Switch to Timeline Preview Mode & Hide Studio Floor Grid for clean export
+      setCameraMode('preview');
+      recorderState.prevFloor = floorGrid.visible;
+      floorGrid.visible = false;
+      recorderState.stopAtTime = endSec;
+      recorderState.chunks = [];
+
+      const stream = threeCanvas.captureStream(30);
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+      const mr = mime
+        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
+        : new MediaRecorder(stream);
+
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) recorderState.chunks.push(e.data);
+      };
+
+      mr.onstop = () => {
+        const blob = new Blob(recorderState.chunks, { type: mime || 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = mode === 'cut' ? `mv_animatic_cut.webm` : `mv_animatic_full.webm`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 200);
+
+        floorGrid.visible = recorderState.prevFloor;
+        document.getElementById('hud-rec-badge').classList.add('hidden');
+        document.getElementById('hud-rec-badge').classList.remove('flex');
+        document.getElementById('rec-btn-label').textContent = 'カット動画書き出し';
+        showToast('ガイド動画 (.webm) を保存しました！動画生成AIの参照素材として使えます');
+      };
+
+      recorderState.mediaRecorder = mr;
+      recorderState.active = true;
+
+      document.getElementById('hud-rec-badge').classList.remove('hidden');
+      document.getElementById('hud-rec-badge').classList.add('flex');
+      document.getElementById('rec-btn-label').textContent = '録画停止';
+
+      seekTo(startSec);
+      mr.start(150);
+      togglePlay(true);
+      showToast(mode === 'cut' ? '選択カットの自動録画を開始しました...' : 'MV全体の自動録画を開始しました...', 'rec');
+    }
+
+    function stopVideoExport() {
+      if (!recorderState.active) return;
+      recorderState.active = false;
+      togglePlay(false);
+      if (recorderState.mediaRecorder && recorderState.mediaRecorder.state !== 'inactive') {
+        recorderState.mediaRecorder.stop();
+      }
+    }
+
+    // =========================================================================
+    // 11. EVENT WIRING & MAIN ANIMATION LOOP
+    // =========================================================================
+    function setCameraMode(mode) {
+      state.cameraMode = mode;
+      const prevBtn = document.getElementById('mode-preview-btn');
+      const orbBtn = document.getElementById('mode-orbit-btn');
+      const hint = document.getElementById('orbit-hint-banner');
+
+      if (mode === 'preview') {
+        prevBtn.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-600 text-white shadow transition cursor-pointer';
+        orbBtn.className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer';
+        hint.classList.add('hidden');
+      } else {
+        orbBtn.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-600 text-white shadow transition cursor-pointer';
+        prevBtn.className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer';
+        hint.classList.remove('hidden');
+        const cut = getActiveCut();
+        if (cut) {
+          syncOrbitFromCamera(cut.camera.start);
+          updateCameraFromOrbit();
+        }
+      }
+    }
+
+    function initEventListeners() {
+      // Camera Modes
+      document.getElementById('mode-preview-btn').addEventListener('click', () => setCameraMode('preview'));
+      document.getElementById('mode-orbit-btn').addEventListener('click', () => setCameraMode('orbit'));
+
+      // Capture Current 3D Orbit View into Start / End Keyframe
+      document.getElementById('capture-start-cam-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (!cut) return;
+        cut.camera.start = {
+          x: Number(camera.position.x.toFixed(2)),
+          y: Number(camera.position.y.toFixed(2)),
+          z: Number(camera.position.z.toFixed(2)),
+          tx: Number(orbitState.target.x.toFixed(2)),
+          ty: Number(orbitState.target.y.toFixed(2)),
+          tz: Number(orbitState.target.z.toFixed(2)),
+          fov: Number(camera.fov.toFixed(0)),
+          roll: Number(orbitState.roll.toFixed(0))
+        };
+        syncInspectorFromState();
+        showToast('現在の3D視点を「開始カメラ (0%)」に記録しました');
+      });
+
+      document.getElementById('capture-end-cam-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (!cut) return;
+        cut.camera.end = {
+          x: Number(camera.position.x.toFixed(2)),
+          y: Number(camera.position.y.toFixed(2)),
+          z: Number(camera.position.z.toFixed(2)),
+          tx: Number(orbitState.target.x.toFixed(2)),
+          ty: Number(orbitState.target.y.toFixed(2)),
+          tz: Number(orbitState.target.z.toFixed(2)),
+          fov: Number(camera.fov.toFixed(0)),
+          roll: Number(orbitState.roll.toFixed(0))
+        };
+        syncInspectorFromState();
+        showToast('現在の3D視点を「終了カメラ (100%)」に記録しました');
+      });
+
+      // Composition Overlays
+      document.getElementById('toggle-thirds-btn').addEventListener('click', (e) => {
+        state.showThirds = !state.showThirds;
+        document.getElementById('guide-thirds').style.display = state.showThirds ? 'block' : 'none';
+        e.target.classList.toggle('opacity-40', !state.showThirds);
+      });
+      document.getElementById('toggle-safe-btn').addEventListener('click', (e) => {
+        state.showSafe = !state.showSafe;
+        document.getElementById('guide-safe').style.display = state.showSafe ? 'block' : 'none';
+        e.target.classList.toggle('opacity-40', !state.showSafe);
+      });
+      document.getElementById('toggle-floor-btn').addEventListener('click', (e) => {
+        state.showFloor = !state.showFloor;
+        floorGrid.visible = state.showFloor;
+        e.target.classList.toggle('opacity-40', !state.showFloor);
+      });
+
+      // Inspector Tabs
+      document.querySelectorAll('.inspector-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.inspector-tab').forEach(b => {
+            b.className = 'inspector-tab py-2.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent cursor-pointer transition';
+          });
+          btn.className = 'inspector-tab py-2.5 text-indigo-400 border-b-2 border-indigo-500 bg-[#1a1f2b] cursor-pointer transition';
+          const targetTab = btn.dataset.tab;
+          ['camera', 'layers', 'timing'].forEach(t => {
+            document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== targetTab);
+          });
+        });
+      });
+
+      // Camera Presets
+      document.querySelectorAll('.cam-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyCameraPreset(btn.dataset.camPreset));
+      });
+
+      // Cut Timing Inputs
+      document.getElementById('cut-name-input').addEventListener('input', (e) => {
+        const cut = getActiveCut();
+        if (cut) {
+          cut.name = e.target.value;
+          renderCutList();
+        }
+      });
+
+      document.getElementById('cut-start-input').addEventListener('change', (e) => {
+        const cut = getActiveCut();
+        const val = parseFloat(e.target.value);
+        if (cut && !isNaN(val)) {
+          cut.startTime = clamp(val, 0, cut.endTime - 0.1);
+          renderCutList();
+          syncInspectorFromState();
+          drawTimeline();
+        }
+      });
+
+      document.getElementById('cut-end-input').addEventListener('change', (e) => {
+        const idx = state.cuts.findIndex(c => c.id === state.selectedCutId);
+        const val = parseFloat(e.target.value);
+        if (idx !== -1 && !isNaN(val)) {
+          const cut = state.cuts[idx];
+          const oldEnd = cut.endTime;
+          cut.endTime = clamp(val, cut.startTime + 0.1, state.duration);
+          const delta = cut.endTime - oldEnd;
+          if (document.getElementById('auto-ripple-chk').checked && delta !== 0) {
+            for (let j = idx + 1; j < state.cuts.length; j++) {
+              state.cuts[j].startTime = Number(clamp(state.cuts[j].startTime + delta, 0, state.duration).toFixed(2));
+              state.cuts[j].endTime = Number(clamp(state.cuts[j].endTime + delta, 0.1, state.duration).toFixed(2));
+            }
+          }
+          renderCutList();
+          syncInspectorFromState();
+          drawTimeline();
+        }
+      });
+
+      // Cut List Add / Duplicate / Delete
+      document.getElementById('add-cut-btn').addEventListener('click', () => {
+        const lastCut = state.cuts[state.cuts.length - 1];
+        const startT = lastCut ? Math.min(lastCut.endTime, state.duration - 1) : 0;
+        const endT = Math.min(startT + 3.0, state.duration);
+        const newId = 'cut-' + Date.now();
+        const clonedLayers = JSON.parse(JSON.stringify(lastCut ? lastCut.layers : state.cuts[0].layers));
+        state.cuts.push({
+          id: newId,
+          name: `CUT ${String(state.cuts.length + 1).padStart(2, '0')}: 新規カット`,
+          startTime: Number(startT.toFixed(2)),
+          endTime: Number(endT.toFixed(2)),
+          easing: 'easeInOut',
+          camera: {
+            start: { x: 0, y: 2.3, z: 7.5, tx: 0, ty: 2.2, tz: 0, fov: 45, roll: 0 },
+            end:   { x: 0, y: 2.3, z: 5.8, tx: 0, ty: 2.2, tz: 0, fov: 45, roll: 0 }
+          },
+          layers: clonedLayers
+        });
+        state.selectedCutId = newId;
+        renderCutList();
+        syncInspectorFromState();
+        drawTimeline();
+        showToast('新しいカットを追加しました');
+      });
+
+      document.getElementById('dup-cut-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (!cut) return;
+        const copy = JSON.parse(JSON.stringify(cut));
+        copy.id = 'cut-' + Date.now();
+        copy.name = cut.name + ' (複製)';
+        const dur = cut.endTime - cut.startTime;
+        copy.startTime = Number(Math.min(cut.endTime, state.duration - 0.5).toFixed(2));
+        copy.endTime = Number(Math.min(copy.startTime + dur, state.duration).toFixed(2));
+        state.cuts.push(copy);
+        state.selectedCutId = copy.id;
+        renderCutList();
+        syncInspectorFromState();
+        drawTimeline();
+        showToast('カットを複製しました');
+      });
+
+      document.getElementById('del-cut-btn').addEventListener('click', () => {
+        if (state.cuts.length <= 1) {
+          showToast('最低1つのカットが必要です', 'error');
+          return;
+        }
+        const idx = state.cuts.findIndex(c => c.id === state.selectedCutId);
+        state.cuts.splice(idx, 1);
+        state.selectedCutId = state.cuts[Math.max(0, idx - 1)].id;
+        renderCutList();
+        syncInspectorFromState();
+        drawTimeline();
+        showToast('カットを削除しました');
+      });
+
+      // Transport Controls
+      document.getElementById('play-pause-btn').addEventListener('click', () => togglePlay());
+      document.getElementById('rewind-btn').addEventListener('click', () => {
+        togglePlay(false);
+        seekTo(0);
+      });
+      document.getElementById('jump-cut-start-btn').addEventListener('click', () => {
+        const cut = getActiveCut();
+        if (cut) seekTo(cut.startTime);
+      });
+
+      document.getElementById('loop-cut-btn').addEventListener('click', (e) => {
+        state.loopActiveCut = !state.loopActiveCut;
+        const btn = e.currentTarget;
+        if (state.loopActiveCut) {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-600/25 border border-emerald-500/60 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer';
+          showToast('選択中のカットをループ再生します');
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-[#202634] hover:bg-[#2a3244] border border-[#2f374a] text-slate-300 text-[11px] font-medium flex items-center gap-1 transition cursor-pointer';
+        }
+      });
+
+      document.getElementById('speed-half-btn').addEventListener('click', () => {
+        state.playbackRate = 0.5;
+        audioEl.playbackRate = 0.5;
+        document.getElementById('speed-half-btn').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white font-mono-num font-semibold cursor-pointer';
+        document.getElementById('speed-normal-btn').className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white font-mono-num cursor-pointer';
+      });
+      document.getElementById('speed-normal-btn').addEventListener('click', () => {
+        state.playbackRate = 1.0;
+        audioEl.playbackRate = 1.0;
+        document.getElementById('speed-normal-btn').className = 'px-2 py-0.5 rounded bg-indigo-600 text-white font-mono-num font-semibold cursor-pointer';
+        document.getElementById('speed-half-btn').className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white font-mono-num cursor-pointer';
+      });
+
+      // Spacebar Shortcut for Play/Pause (when not typing in inputs)
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+          e.preventDefault();
+          togglePlay();
+        }
+      });
+
+      // Custom Audio File Upload (MP3/WAV/OGG)
+      document.getElementById('audio-upload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        togglePlay(false);
+        const url = URL.createObjectURL(file);
+        audioEl.src = url;
+        document.getElementById('audio-label').textContent = file.name;
+
+        try {
+          const arrayBuf = await file.arrayBuffer();
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const decoded = await audioCtx.decodeAudioData(arrayBuf);
+          state.duration = Number(decoded.duration.toFixed(2));
+          state.waveformPeaks = extractWaveformPeaks(decoded, 700);
+          seekTo(0);
+          drawTimeline();
+          showToast(`音源「${file.name}」(${state.duration}秒) を読み込みました`);
+        } catch (err) {
+          showToast('音声波形の解析に失敗しましたが再生は可能です', 'error');
+        }
+      });
+
+      // Export / Import JSON Project
+      document.getElementById('export-json-btn').addEventListener('click', () => {
+        const payload = {
+          version: '2.5D-MV-Previz-1.0',
+          duration: state.duration,
+          layers: state.layers,
+          cuts: state.cuts
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mv_previz_project.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('プロジェクトデータを JSON ファイルとして保存しました');
+      });
+
+      document.getElementById('import-json-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.cuts && data.layers) {
+              state.duration = data.duration || state.duration;
+              state.layers = data.layers;
+              state.cuts = data.cuts;
+              state.selectedCutId = state.cuts[0].id;
+              state.layers.forEach(l => applyTextureToLayer(l, l.imageUrl));
+              renderCutList();
+              syncInspectorFromState();
+              seekTo(0);
+              showToast('JSONプロジェクトを読み込みました');
+            }
+          } catch (err) {
+            showToast('JSONファイルの読み込みに失敗しました', 'error');
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // AI Export Buttons
+      document.getElementById('export-start-png').addEventListener('click', () => exportKeyframePNG('start'));
+      document.getElementById('export-end-png').addEventListener('click', () => exportKeyframePNG('end'));
+      document.getElementById('record-cut-btn').addEventListener('click', () => startVideoExport('cut'));
+      document.getElementById('record-full-btn').addEventListener('click', () => startVideoExport('full'));
+
+      window.addEventListener('resize', drawTimeline);
+    }
+
+    // Main Render Loop
+    let lastFrameTime = performance.now();
+    function mainLoop(now) {
+      const dt = (now - lastFrameTime) / 1000;
+      lastFrameTime = now;
+
+      if (state.isPlaying) {
+        if (audioEl.src && !audioEl.paused) {
+          state.currentTime = audioEl.currentTime;
+        } else {
+          state.currentTime += dt * state.playbackRate;
+        }
+
+        // Auto-stop recording if active
+        if (recorderState.active && state.currentTime >= recorderState.stopAtTime) {
+          state.currentTime = recorderState.stopAtTime;
+          evaluateSceneAtTime(state.currentTime);
+          renderer.render(scene, camera);
+          stopVideoExport();
+        } else if (state.loopActiveCut) {
+          const cut = getActiveCut();
+          if (cut && (state.currentTime >= cut.endTime || state.currentTime < cut.startTime)) {
+            seekTo(cut.startTime);
+          }
+        } else if (state.currentTime >= state.duration) {
+          state.currentTime = state.duration;
+          togglePlay(false);
+        }
+
+        const activeAtT = findCutAtTime(state.currentTime);
+        if (activeAtT && activeAtT.id !== state.selectedCutId && !state.loopActiveCut) {
+          state.selectedCutId = activeAtT.id;
+          renderCutList();
+          syncInspectorFromState();
+        }
+
+        updateTimecodeUI();
+        drawTimeline();
+      }
+
+      evaluateSceneAtTime(state.currentTime);
+      renderer.render(scene, camera);
+      requestAnimationFrame(mainLoop);
+    }
+
+    // =========================================================================
+    // 12. BOOTSTRAP APPLICATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      bindCameraInputs();
+      initEventListeners();
+      renderCutList();
+      syncInspectorFromState();
+      updateTimecodeUI();
+      drawTimeline();
+
+      // Generate built-in 120BPM demo track so audio & waveform work immediately
+      try {
+        const demo = await generateDemoTrackWav(16);
+        audioEl.src = demo.url;
+        state.waveformPeaks = extractWaveformPeaks(demo.buffer, 640);
+        drawTimeline();
+      } catch (e) {
+        console.warn('Demo audio synthesis fallback:', e);
+      }
+
+      requestAnimationFrame(mainLoop);
+    });
+  </script>
+</body>
+</html>
